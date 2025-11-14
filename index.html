@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Calorie Tracker</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 15px;
+        background: #f4f6f9;
+        margin: 0;
+        max-width: 480px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    h2, h3 { text-align: center; }
+
+    .card {
+        background: white;
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        margin-bottom: 18px;
+    }
+
+    select, input, button {
+        width: 100%;
+        padding: 14px;
+        margin-top: 8px;
+        margin-bottom: 12px;
+        border-radius: 10px;
+        border: 1px solid #ccc;
+        font-size: 17px;
+    }
+
+    button {
+        background: #4CAF50;
+        color: white;
+        border: none;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    #list li {
+        background: white;
+        padding: 14px;
+        margin-bottom: 10px;
+        border-radius: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 16px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .delete-btn {
+        background: #ff4444;
+        color: white;
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .total-box {
+        padding: 15px;
+        background: white;
+        font-size: 20px;
+        text-align: center;
+        border-radius: 12px;
+        font-weight: bold;
+        margin-top: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .progress-container {
+        width: 100%;
+        background: #ddd;
+        height: 22px;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-top: 12px;
+    }
+
+    .progress-bar {
+        height: 100%;
+        width: 0%;
+        background: #4CAF50;
+        transition: width 0.4s;
+    }
+
+    .goal-text {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 15px;
+    }
+</style>
+
+</head>
+<body>
+
+<h2>Calorie Tracker</h2>
+
+<div class="card">
+
+    <label>Meal Category:</label>
+    <select id="categorySelect">
+        <option value="">-- Select Meal --</option>
+        <option value="Breakfast">Breakfast</option>
+        <option value="Lunch">Lunch</option>
+        <option value="Dinner">Dinner</option>
+        <option value="Snacks">Snacks</option>
+    </select>
+
+    <label>Food Item:</label>
+    <select id="foodSelect">
+        <option value="">-- Select Food --</option>
+
+        <option value="rice">Rice (per 100g)</option>
+        <option value="chicken">Chicken (per 100g)</option>
+        <option value="egg">Egg (per piece)</option>
+        <option value="eggwhite">Egg White (per piece)</option>
+        <option value="banana">Banana (per piece)</option>
+        <option value="oats">Oats (per 100g)</option>
+        <option value="milk">Milk (per 100ml)</option>
+        <option value="coffee">Tea/Coffee (per cup)</option>
+        <option value="bread">Bread slice (per slice)</option>
+        <option value="idli">Idli (per piece)</option>
+        <option value="dosa">Dosa (per piece)</option>
+        <option value="chapathi">Chapathi (per piece)</option>
+    </select>
+
+    <label>Quantity:</label>
+    <input type="number" id="quantity" placeholder="Enter quantity">
+
+    <button id="addBtn">Add</button>
+</div>
+
+<h3>Today's Items:</h3>
+<ul id="list"></ul>
+
+<div class="total-box">
+    Total Calories: <span id="totalCal">0</span> kcal
+</div>
+
+<h3>Progress</h3>
+<div class="progress-container">
+    <div id="progressBar" class="progress-bar"></div>
+</div>
+<p class="goal-text">Daily Goal: <b>2400 kcal</b></p>
+
+<script>
+const foodCalories = {
+    rice: 130,
+    chicken: 165,
+    egg: 78,
+    eggwhite: 17,
+    banana: 105,
+    oats: 389,
+    milk: 60,
+    coffee: 40,
+    bread: 66,
+    idli: 50,
+    dosa: 133,
+    chapathi: 120
+};
+
+const dailyGoal = 2400;
+
+let total = 0;
+let items = [];
+
+const list = document.getElementById("list");
+const totalCal = document.getElementById("totalCal");
+const progressBar = document.getElementById("progressBar");
+
+// === Daily Reset ===
+const today = new Date().toDateString();
+const savedDay = localStorage.getItem("day");
+
+if (savedDay !== today) {
+    localStorage.clear();
+    localStorage.setItem("day", today);
+} else {
+    items = JSON.parse(localStorage.getItem("items")) || [];
+    total = Number(localStorage.getItem("total")) || 0;
+}
+
+function renderItems() {
+    list.innerHTML = "";
+    items.forEach((item, index) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+            <span><b>${item.category}</b> - ${item.food} × ${item.qty}</span>
+            <span>${item.calories} kcal</span>
+            <button class="delete-btn" data-index="${index}">X</button>
+        `;
+        list.appendChild(li);
+    });
+    totalCal.innerText = total;
+    updateProgress();
+}
+
+function updateProgress() {
+    let percent = (total / dailyGoal) * 100;
+    if (percent > 100) percent = 100;
+    progressBar.style.width = percent + "%";
+}
+
+renderItems();
+
+document.getElementById("addBtn").addEventListener("click", () => {
+    const category = document.getElementById("categorySelect").value;
+    const food = document.getElementById("foodSelect").value;
+    const qty = Number(document.getElementById("quantity").value);
+
+    if (!category || !food || qty <= 0) {
+        alert("Select category, food, and enter quantity");
+        return;
+    }
+
+    const calories = foodCalories[food] * qty;
+    total += calories;
+
+    const newItem = { category, food, qty, calories };
+    items.push(newItem);
+
+    localStorage.setItem("items", JSON.stringify(items));
+    localStorage.setItem("total", total);
+
+    renderItems();
+
+    document.getElementById("categorySelect").value = "";
+    document.getElementById("foodSelect").value = "";
+    document.getElementById("quantity").value = "";
+});
+
+list.addEventListener("click", (e) => {
+    if (e.target.classList.contains("delete-btn")) {
+        const index = e.target.getAttribute("data-index");
+        total -= items[index].calories;
+        items.splice(index, 1);
+
+        localStorage.setItem("items", JSON.stringify(items));
+        localStorage.setItem("total", total);
+
+        renderItems();
+    }
+});
+</script>
+
+</body>
+</html>
